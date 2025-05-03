@@ -950,60 +950,38 @@ scene.add(controller1);
 scene.add(controller2);
 
 // Movement variables for VR
-let isMoving = false;
+let vrMoveForward = false;
+let vrMoveBackward = false;
+let vrMoveLeft = false;
+let vrMoveRight = false;
 const vrSpeed = 0.1;
-
-// Function to check gamepad state
-function checkGamepad() {
-    if (renderer.xr.isPresenting) {
-        const session = renderer.xr.getSession();
-        if (session) {
-            const gamepads = navigator.getGamepads();
-            for (const gamepad of gamepads) {
-                if (gamepad) {
-                    console.log('Gamepad found:', gamepad.id);
-                    // Check grip button (usually button 1)
-                    isMoving = gamepad.buttons[1].pressed;
-                    console.log('Grip button pressed:', isMoving);
-                }
-            }
-        }
-    }
-}
-
-// Add controller event listeners
-controller1.addEventListener('squeezestart', () => {
-    console.log('Left controller squeeze start');
-    isMoving = true;
-});
-
-controller1.addEventListener('squeezeend', () => {
-    console.log('Left controller squeeze end');
-    isMoving = false;
-});
-
-controller2.addEventListener('squeezestart', () => {
-    console.log('Right controller squeeze start');
-    isMoving = true;
-});
-
-controller2.addEventListener('squeezeend', () => {
-    console.log('Right controller squeeze end');
-    isMoving = false;
-});
 
 // Update the render function to handle VR movement
 function render() {
     if (renderer.xr.isPresenting) {
         // VR Movement
-        if (isMoving) {
-            // Get the camera's forward vector
-            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-            forward.y = 0; // Keep movement on the ground plane
-            forward.normalize();
-            
-            // Move the player rig forward
-            playerRig.position.add(forward.multiplyScalar(vrSpeed));
+        const moveDirection = new THREE.Vector3();
+        
+        // Get the camera's forward and right vectors
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+        
+        // Keep movement on the ground plane
+        forward.y = 0;
+        right.y = 0;
+        forward.normalize();
+        right.normalize();
+        
+        // Calculate movement direction
+        if (vrMoveForward) moveDirection.add(forward);
+        if (vrMoveBackward) moveDirection.sub(forward);
+        if (vrMoveRight) moveDirection.add(right);
+        if (vrMoveLeft) moveDirection.sub(right);
+        
+        // Normalize and apply movement
+        if (moveDirection.length() > 0) {
+            moveDirection.normalize();
+            playerRig.position.add(moveDirection.multiplyScalar(vrSpeed));
         }
     } else {
         if (controls.isLocked) {
@@ -1440,44 +1418,40 @@ startButton.addEventListener('click', () => {
 
 // Add keyboard controls for VR movement
 document.addEventListener('keydown', (event) => {
-    switch(event.code) {
-        case 'KeyW':
-            vrMoveForward = true;
-            console.log('W key pressed - Moving forward');
-            break;
-        case 'KeyS':
-            vrMoveBackward = true;
-            console.log('S key pressed - Moving backward');
-            break;
-        case 'KeyA':
-            vrMoveLeft = true;
-            console.log('A key pressed - Moving left');
-            break;
-        case 'KeyD':
-            vrMoveRight = true;
-            console.log('D key pressed - Moving right');
-            break;
+    if (renderer.xr.isPresenting) {
+        switch(event.code) {
+            case 'KeyW':
+                vrMoveForward = true;
+                break;
+            case 'KeyS':
+                vrMoveBackward = true;
+                break;
+            case 'KeyA':
+                vrMoveLeft = true;
+                break;
+            case 'KeyD':
+                vrMoveRight = true;
+                break;
+        }
     }
 });
 
 document.addEventListener('keyup', (event) => {
-    switch(event.code) {
-        case 'KeyW':
-            vrMoveForward = false;
-            console.log('W key released');
-            break;
-        case 'KeyS':
-            vrMoveBackward = false;
-            console.log('S key released');
-            break;
-        case 'KeyA':
-            vrMoveLeft = false;
-            console.log('A key released');
-            break;
-        case 'KeyD':
-            vrMoveRight = false;
-            console.log('D key released');
-            break;
+    if (renderer.xr.isPresenting) {
+        switch(event.code) {
+            case 'KeyW':
+                vrMoveForward = false;
+                break;
+            case 'KeyS':
+                vrMoveBackward = false;
+                break;
+            case 'KeyA':
+                vrMoveLeft = false;
+                break;
+            case 'KeyD':
+                vrMoveRight = false;
+                break;
+        }
     }
 });
 
