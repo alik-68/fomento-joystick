@@ -950,39 +950,54 @@ scene.add(controller1);
 scene.add(controller2);
 
 // Movement variables for VR
-let vrMoveForward = false;
-let vrMoveBackward = false;
-let vrMoveLeft = false;
-let vrMoveRight = false;
 const vrSpeed = 0.1;
 
-// Update the render function to handle VR movement
+// Function to check gamepad state and handle movement
+function checkGamepad() {
+    if (renderer.xr.isPresenting) {
+        const session = renderer.xr.getSession();
+        if (session) {
+            const gamepads = navigator.getGamepads();
+            for (const gamepad of gamepads) {
+                if (gamepad) {
+                    // Get joystick values (usually axes 2 and 3 for the right controller)
+                    const joystickX = gamepad.axes[2];
+                    const joystickY = gamepad.axes[3];
+                    
+                    // Only move if joystick is pushed beyond deadzone
+                    const deadzone = 0.1;
+                    if (Math.abs(joystickX) > deadzone || Math.abs(joystickY) > deadzone) {
+                        // Get the camera's forward and right vectors
+                        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+                        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+                        
+                        // Keep movement on the ground plane
+                        forward.y = 0;
+                        right.y = 0;
+                        forward.normalize();
+                        right.normalize();
+                        
+                        // Calculate movement direction based on joystick input
+                        const moveDirection = new THREE.Vector3();
+                        moveDirection.add(forward.multiplyScalar(-joystickY * vrSpeed));
+                        moveDirection.add(right.multiplyScalar(joystickX * vrSpeed));
+                        
+                        // Apply movement
+                        if (moveDirection.length() > 0) {
+                            moveDirection.normalize();
+                            playerRig.position.add(moveDirection.multiplyScalar(vrSpeed));
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Update the render function
 function render() {
     if (renderer.xr.isPresenting) {
-        // VR Movement
-        const moveDirection = new THREE.Vector3();
-        
-        // Get the camera's forward and right vectors
-        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-        
-        // Keep movement on the ground plane
-        forward.y = 0;
-        right.y = 0;
-        forward.normalize();
-        right.normalize();
-        
-        // Calculate movement direction
-        if (vrMoveForward) moveDirection.add(forward);
-        if (vrMoveBackward) moveDirection.sub(forward);
-        if (vrMoveRight) moveDirection.add(right);
-        if (vrMoveLeft) moveDirection.sub(right);
-        
-        // Normalize and apply movement
-        if (moveDirection.length() > 0) {
-            moveDirection.normalize();
-            playerRig.position.add(moveDirection.multiplyScalar(vrSpeed));
-        }
+        checkGamepad(); // Check for joystick input
     } else {
         if (controls.isLocked) {
             // Calculate movement
@@ -1465,7 +1480,7 @@ keyboardInstructions.style.backgroundColor = 'rgba(0,0,0,0.5)';
 keyboardInstructions.style.padding = '10px';
 keyboardInstructions.style.borderRadius = '5px';
 keyboardInstructions.innerHTML = `
-    <h3>Movement Controls v10 </h3>
+    <h3>Movement Controls v11 </h3>
     <p>W: Move Forward</p>
     <p>S: Move Backward</p>
     <p>A: Move Left</p>
