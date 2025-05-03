@@ -1465,7 +1465,7 @@ keyboardInstructions.style.backgroundColor = 'rgba(0,0,0,0.5)';
 keyboardInstructions.style.padding = '10px';
 keyboardInstructions.style.borderRadius = '5px';
 keyboardInstructions.innerHTML = `
-    <h3>Movement Controls v9 </h3>
+    <h3>Movement Controls v10 </h3>
     <p>W: Move Forward</p>
     <p>S: Move Backward</p>
     <p>A: Move Left</p>
