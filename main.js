@@ -53,6 +53,10 @@ const direction = new THREE.Vector3();
 let baseSpeed = 1.5; // Reduced default speed
 const sprintMultiplier = 1.5; // Reduced sprint multiplier
 
+// Movement variables for VR
+const vrSpeed = 0.1;
+let isMoving = false;
+
 // Add instructions overlay
 const instructions = document.createElement('div');
 instructions.style.position = 'fixed';
@@ -949,9 +953,6 @@ controller2.add(controllerRay2);
 scene.add(controller1);
 scene.add(controller2);
 
-// Movement variables for VR
-const vrSpeed = 0.1;
-
 // Function to check gamepad state and handle movement
 function checkGamepad() {
     if (renderer.xr.isPresenting) {
@@ -960,44 +961,50 @@ function checkGamepad() {
             const gamepads = navigator.getGamepads();
             for (const gamepad of gamepads) {
                 if (gamepad) {
-                    // Get joystick values (usually axes 2 and 3 for the right controller)
-                    const joystickX = gamepad.axes[2];
-                    const joystickY = gamepad.axes[3];
-                    
-                    // Only move if joystick is pushed beyond deadzone
-                    const deadzone = 0.1;
-                    if (Math.abs(joystickX) > deadzone || Math.abs(joystickY) > deadzone) {
-                        // Get the camera's forward and right vectors
-                        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-                        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-                        
-                        // Keep movement on the ground plane
-                        forward.y = 0;
-                        right.y = 0;
-                        forward.normalize();
-                        right.normalize();
-                        
-                        // Calculate movement direction based on joystick input
-                        const moveDirection = new THREE.Vector3();
-                        moveDirection.add(forward.multiplyScalar(-joystickY * vrSpeed));
-                        moveDirection.add(right.multiplyScalar(joystickX * vrSpeed));
-                        
-                        // Apply movement
-                        if (moveDirection.length() > 0) {
-                            moveDirection.normalize();
-                            playerRig.position.add(moveDirection.multiplyScalar(vrSpeed));
-                        }
-                    }
+                    // Check trigger button (usually button 0)
+                    isMoving = gamepad.buttons[0].pressed;
                 }
             }
         }
     }
 }
 
+// Add controller event listeners
+controller1.addEventListener('selectstart', () => {
+    console.log('Left controller trigger pressed');
+    isMoving = true;
+});
+
+controller1.addEventListener('selectend', () => {
+    console.log('Left controller trigger released');
+    isMoving = false;
+});
+
+controller2.addEventListener('selectstart', () => {
+    console.log('Right controller trigger pressed');
+    isMoving = true;
+});
+
+controller2.addEventListener('selectend', () => {
+    console.log('Right controller trigger released');
+    isMoving = false;
+});
+
 // Update the render function
 function render() {
     if (renderer.xr.isPresenting) {
-        checkGamepad(); // Check for joystick input
+        checkGamepad(); // Check for button input
+        
+        // Handle movement when button is pressed
+        if (isMoving) {
+            // Get the camera's forward vector
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+            forward.y = 0; // Keep movement on the ground plane
+            forward.normalize();
+            
+            // Move the player rig forward
+            playerRig.position.add(forward.multiplyScalar(vrSpeed));
+        }
     } else {
         if (controls.isLocked) {
             // Calculate movement
@@ -1480,7 +1487,7 @@ keyboardInstructions.style.backgroundColor = 'rgba(0,0,0,0.5)';
 keyboardInstructions.style.padding = '10px';
 keyboardInstructions.style.borderRadius = '5px';
 keyboardInstructions.innerHTML = `
-    <h3>Movement Controls v11 </h3>
+    <h3>Movement Controls v12 </h3>
     <p>W: Move Forward</p>
     <p>S: Move Backward</p>
     <p>A: Move Left</p>
