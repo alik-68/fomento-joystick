@@ -953,57 +953,34 @@ controller2.add(controllerRay2);
 scene.add(controller1);
 scene.add(controller2);
 
-// Function to check gamepad state and handle movement
+// Function to check gamepad state
 function checkGamepad() {
     if (renderer.xr.isPresenting) {
-        const session = renderer.xr.getSession();
-        if (session) {
-            const gamepads = navigator.getGamepads();
-            for (const gamepad of gamepads) {
-                if (gamepad) {
-                    // Check trigger button (usually button 0)
-                    isMoving = gamepad.buttons[0].pressed;
-                }
+        const gamepads = navigator.getGamepads();
+        for (const gamepad of gamepads) {
+            if (gamepad) {
+                // Check if the trigger button is pressed (button 0)
+                isMoving = gamepad.buttons[0].pressed;
+                console.log('Gamepad button pressed:', isMoving);
             }
         }
     }
 }
 
-// Add controller event listeners
-controller1.addEventListener('selectstart', () => {
-    console.log('Left controller trigger pressed');
-    isMoving = true;
-});
-
-controller1.addEventListener('selectend', () => {
-    console.log('Left controller trigger released');
-    isMoving = false;
-});
-
-controller2.addEventListener('selectstart', () => {
-    console.log('Right controller trigger pressed');
-    isMoving = true;
-});
-
-controller2.addEventListener('selectend', () => {
-    console.log('Right controller trigger released');
-    isMoving = false;
-});
-
 // Update the render function
 function render() {
     if (renderer.xr.isPresenting) {
-        checkGamepad(); // Check for button input
+        checkGamepad();
         
-        // Handle movement when button is pressed
         if (isMoving) {
-            // Get the camera's forward vector
-            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-            forward.y = 0; // Keep movement on the ground plane
+            // Simple forward movement
+            const forward = new THREE.Vector3(0, 0, -1);
+            forward.applyQuaternion(camera.quaternion);
+            forward.y = 0;
             forward.normalize();
             
-            // Move the player rig forward
-            playerRig.position.add(forward.multiplyScalar(vrSpeed));
+            // Move forward
+            playerRig.position.add(forward.multiplyScalar(0.1));
         }
     } else {
         if (controls.isLocked) {
