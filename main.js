@@ -959,9 +959,9 @@ function checkGamepad() {
         const gamepads = navigator.getGamepads();
         for (const gamepad of gamepads) {
             if (gamepad) {
-                // Check if the grip button is pressed (button 1)
-                isMoving = gamepad.buttons[1].pressed;
-                console.log('Grip button pressed:', isMoving);
+                // Check if the trigger button is pressed (button 0)
+                isMoving = gamepad.buttons[0].pressed;
+                console.log('Trigger button pressed:', isMoving);
             }
         }
     }
